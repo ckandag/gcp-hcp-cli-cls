@@ -390,6 +390,8 @@ def _build_cluster_spec(
     cluster_config: ClusterConfig,
     description: Optional[str] = None,
     endpoint_access: str = "Private",
+    version: Optional[str] = None,
+    channel_group: Optional[str] = None,
 ) -> Dict:
     """Build the cluster data payload for API submission.
 
@@ -398,6 +400,8 @@ def _build_cluster_spec(
         cluster_config: Complete cluster configuration
         description: Optional cluster description
         endpoint_access: API server endpoint access mode (Private or PublicAndPrivate)
+        version: OCP version (e.g. 4.22.0-ec.4)
+        channel_group: Channel group (stable, fast, candidate)
 
     Returns:
         Complete cluster data dict ready for API submission
@@ -427,6 +431,13 @@ def _build_cluster_spec(
 
     if description:
         cluster_data["description"] = description
+
+    # Build release spec
+    if version:
+        release: Dict = {"version": version}
+        if channel_group:
+            release["channelGroup"] = channel_group
+        cluster_data["spec"]["release"] = release  # type: ignore[index]
 
     return cluster_data
 
@@ -1130,6 +1141,19 @@ def cluster_status(
     help="Boot disk type for default nodepool (default: pd-standard)",
 )
 @click.option(
+    "--version",
+    "cluster_version",
+    help="OCP version for the cluster (e.g. 4.22.0, 4.22.0-ec.4). "
+    "If omitted, the backend default version is used.",
+)
+@click.option(
+    "--channel-group",
+    type=click.Choice(["stable", "fast", "candidate", "eus"], case_sensitive=False),
+    default=None,
+    help="Channel group for version resolution (default: stable). "
+    "If omitted, the backend default is used.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show what would be created without actually creating",
@@ -1154,6 +1178,8 @@ def create_cluster(
     node_machine_type: str,
     node_disk_size: int,
     node_disk_type: str,
+    cluster_version: Optional[str],
+    channel_group: Optional[str],
     dry_run: bool,
 ) -> None:
     """Create a new cluster.
@@ -1184,25 +1210,25 @@ def create_cluster(
 
     \b
     Automatic Infrastructure Provisioning Mode:
-      gcphcp clusters create my-cluster --project my-project --setup-infra
+      gcphcp clusters create my-cluster --version 4.22.0 \\
+          --project my-project --setup-infra
+
+    \b
+    With specific channel group:
+      gcphcp clusters create my-cluster --version 4.22.0-ec.4 \\
+          --channel-group candidate --project my-project --setup-infra
 
     \b
     Pre-Provisioned Infrastructure Mode:
-      gcphcp clusters create my-cluster \\
+      gcphcp clusters create my-cluster --version 4.22.0 \\
           --iam-config-file infra-iam-config.json \\
           --signing-key-file infra-signing-key.pem \\
           --infra-config-file infra-config.json
 
     \b
-    Config files with explicit network:
-      gcphcp clusters create my-cluster \\
-          --iam-config-file infra-iam-config.json \\
-          --signing-key-file infra-signing-key.pem \\
-          --network my-vpc --subnet my-subnet
-
-    \b
     Dry run to preview cluster spec:
-      gcphcp clusters create my-cluster --setup-infra --project my-proj --dry-run
+      gcphcp clusters create my-cluster --version 4.22.0 \\
+          --setup-infra --project my-proj --dry-run
     """
     try:
         # =================================================================
@@ -1358,6 +1384,8 @@ def create_cluster(
             cluster_config=cluster_config,
             description=description,
             endpoint_access=endpoint_access,
+            version=cluster_version,
+            channel_group=channel_group,
         )
 
         if dry_run:
