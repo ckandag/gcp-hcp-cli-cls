@@ -10,6 +10,7 @@ import click
 from rich.console import Console
 from rich.logging import RichHandler
 
+from .. import __version__
 from ..auth.google_auth import GoogleCloudAuth
 from ..client.api_client import APIClient
 from ..utils.config import Config
@@ -195,7 +196,7 @@ def create_cli_context(
     is_flag=True,
     help="Suppress non-essential output",
 )
-@click.version_option(version="0.1.0", prog_name="gcphcp")
+@click.version_option(version=__version__, prog_name="gcphcp")
 @click.pass_context
 def cli(
     ctx: click.Context,
