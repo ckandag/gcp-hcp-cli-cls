@@ -114,6 +114,7 @@ class TestValidateWifConfig:
                 "cloud-controller": "sa3@example.com",
                 "gcp-pd-csi": "sa4@example.com",
                 "image-registry": "sa5@example.com",
+                "cloud-network": "sa6@example.com",
             },
         }
 
@@ -195,6 +196,7 @@ class TestWifConfigToClusterSpec:
                 "cloud-controller": "cloudcontroller@example.com",
                 "gcp-pd-csi": "storage@example.com",
                 "image-registry": "imageregistry@example.com",
+                "cloud-network": "cloudnetwork@example.com",
             },
         }
 
@@ -212,6 +214,9 @@ class TestWifConfigToClusterSpec:
         assert (
             result["serviceAccountsRef"]["imageRegistryEmail"]
             == "imageregistry@example.com"
+        )
+        assert (
+            result["serviceAccountsRef"]["networkEmail"] == "cloudnetwork@example.com"
         )
 
     def test_iam_config_to_wif_spec_empty_config(self):
@@ -390,6 +395,7 @@ class TestServiceAccountsConstant:
         assert "cloud-controller" in SERVICE_ACCOUNTS
         assert "gcp-pd-csi" in SERVICE_ACCOUNTS
         assert "image-registry" in SERVICE_ACCOUNTS
+        assert "cloud-network" in SERVICE_ACCOUNTS
 
     def test_service_accounts_values_are_strings(self):
         """When checking SERVICE_ACCOUNTS values they should be strings."""
